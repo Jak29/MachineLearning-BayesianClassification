@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
 import math
-from sklearn import metrics
-import re
-from collections import Counter
 
 def task1():
     movie_reviews = pd.read_excel("movie_reviews.xlsx")
@@ -92,15 +89,47 @@ def task4(positive_dict, negative_dict, training_positive_count, training_negati
     positive_prob_review = training_positive_count / (training_negative_count + training_positive_count)
     negative_prob_review= training_negative_count / (training_negative_count + training_positive_count)
     
-    print(positive_prob_review)
-    print(negative_prob_review)
-    
     return positive_prob_dict, negative_prob_dict, positive_prob_review, negative_prob_review
 
 
-def task5(positive_prob_review, negative_prob_review):
+def task5(positive_prob_dict, negative_prob_dict, positive_prob_review, negative_prob_review, new_review):
     
+    positive_prob_log_dict = {}
+    negative_prob_log_dict = {}
     
+    for word in positive_prob_dict:
+        positive_prob_log_dict[word] = math.log(positive_prob_dict[word])
+        
+    for word in negative_prob_dict:
+        negative_prob_log_dict[word] = math.log(negative_prob_dict[word])
+        
+    words = new_review.replace("'", "")
+    words = words.replace('[^a-zA-Z0-9]', ' ').lower().split()
+    
+    log_likelihood_positive = 0
+    log_likelihood_negative = 0
+    
+    for word in words:  
+        if word in positive_prob_log_dict:            
+            log_likelihood_positive = log_likelihood_positive + positive_prob_log_dict[word]
+        
+        
+    for word in words:
+        if word in negative_prob_log_dict:  
+            log_likelihood_negative = log_likelihood_negative + negative_prob_log_dict[word]
+        
+    log_likelihood_positive += math.log(positive_prob_review)
+    log_likelihood_negative += math.log(negative_prob_review)
+    
+    positive = math.exp(log_likelihood_positive)
+    negative = math.exp(log_likelihood_negative)
+    
+    print(positive)
+    print(negative)
+    
+    predicted_sentiment = 'positive' if positive > negative else 'negative'
+    
+    return predicted_sentiment
     
     
 def main():
@@ -108,7 +137,7 @@ def main():
     training_data, training_labels, test_data, test_labels, training_positive_count, training_negative_count = task1()
     
     # Task 2
-    words = task2(training_data, 4, 1000)
+    words = task2(training_data, 2, 500)
     
     # Task 3
     review = pd.concat([training_data, training_labels], axis=1)
@@ -118,6 +147,8 @@ def main():
     positive_prob_dict, negative_prob_dict, positive_prob_review, negative_prob_review = task4(positive_dict, negative_dict, training_positive_count, training_negative_count)
     
     # Task 5
-    task5(positive_prob_review, negative_prob_review)
+    new_review = "After seeing PURELY BELTER I came onto this site to review it , but not only that I also had to check out the resume of the screenwriter / director Mark Herman . As soon as his name appeared on the opening credits I knew that I had seen his name before somewhere and after checking I found out he wrote and directed the film version of LITTLE VOICE one of the most underrated feelgood British movies of the 1990s   PURELY BELTER is an entirely different kettle of fish . It's a grim stereotypical view of Geordie life and a very unfunny one at that . Everyone is either a wife beater , a single mother , a shoplifter , a drunk or a junkie . Since many scenes are set in a school the PE teacher is a sadistic bully and that's the closest the film ever gets to reality . Oh and everyone is very foul mouthed which adds to the grim unlikable atmosphere  I didn't like PURELY BELTER much while I watched and now that I know who Mark Herman is I like it even less . With LITTLE VOICE Herman proved you can make an amusing uplifting comedy featuring northern souls but I had to ask where his undoubted talent went in this movie ?"
+    predicted_sentiment = task5(positive_prob_dict, negative_prob_dict, positive_prob_review, negative_prob_review, new_review)
+    print(predicted_sentiment)
     
 main()
